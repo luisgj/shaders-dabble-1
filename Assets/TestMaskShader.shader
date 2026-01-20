@@ -1,0 +1,84 @@
+Shader "Custom/TestMaskShader"
+{
+    Properties
+    {
+        [MainColor] _BaseColor("Base Color", Color) = (1, 1, 1, 1)
+        [MainTexture] _BaseMap("Base Map", 2D) = "white" {}
+        [MainTexture] _MaskMap("Mask Map", 2D) = "white" {}
+        [Enum(UnityEngine.Rendering.BlendMode)] 
+        _SrcBlendFactor("Src Blend Factor", Float) = 1
+        [Enum(UnityEngine.Rendering.BlendMode)] 
+        _DstBlendFactor("Dst Blend Factor", Float) = 1
+        [Enum(UnityEngine.Rendering.BlendOp)] 
+        _BlendOp("Blend Op", Float) = 1
+    }
+
+    SubShader
+    {
+        Tags { 
+            "RenderType" = "Opaque" 
+            "RenderPipeline" = "UniversalPipeline" 
+            "Queue" = "Transparent"
+        }
+
+        // Alpha Blend Formula (make transparent objects): 
+        // source: color this shader is rendering
+        // destination: color already on the screen
+        // formula: source * sourceAlpha + destination * (1 - sourceAlpha)
+        Blend [_SrcBlendFactor] [_DstBlendFactor]
+        BlendOp [_BlendOp]
+
+        Pass
+        {
+            HLSLPROGRAM
+
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+
+            struct Attributes
+            {
+                float4 positionOS : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct Varyings
+            {
+                float4 positionHCS : SV_POSITION;
+                float2 uv : TEXCOORD0;
+                float2 maskUV : TEXCOORD1;
+            };
+
+            TEXTURE2D(_BaseMap);
+            SAMPLER(sampler_BaseMap);
+
+            TEXTURE2D(_MaskMap);
+            SAMPLER(sampler_MaskMap);
+
+            CBUFFER_START(UnityPerMaterial)
+                half4 _BaseColor;
+                float4 _BaseMap_ST;
+                float4 _MaskMap_ST;
+            CBUFFER_END
+
+            Varyings vert(Attributes IN)
+            {
+                Varyings OUT;
+                OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.uv = TRANSFORM_TEX(IN.uv, _BaseMap);
+                OUT.maskUV = TRANSFORM_TEX(IN.uv, _MaskMap);
+                OUT.maskUV += float2(_Time.y, _Time.y) * -0.3f;
+                return OUT;
+            }
+
+            half4 frag(Varyings IN) : SV_Target
+            {
+                half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv) * _BaseColor;
+                half4 mask = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, IN.maskUV);
+                return half4(color.rgb, mask.r);
+            }
+            ENDHLSL
+        }
+    }
+}
