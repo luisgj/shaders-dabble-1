@@ -68,7 +68,6 @@ Shader "Custom/TestMaskShader"
                 OUT.positionHCS = TransformObjectToHClip(IN.positionOS.xyz);
                 OUT.uv = TRANSFORM_TEX(IN.uv, _BaseMap);
                 OUT.maskUV = TRANSFORM_TEX(IN.uv, _MaskMap);
-                OUT.maskUV += float2(_Time.y, _Time.y) * -0.3f;
                 return OUT;
             }
 
@@ -76,7 +75,7 @@ Shader "Custom/TestMaskShader"
             {
                 half4 color = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, IN.uv) * _BaseColor;
                 half4 mask = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, IN.maskUV);
-                return half4(color.rgb, mask.r);
+                return half4(color.rgb, color.a * mask.r);
             }
             ENDHLSL
         }
