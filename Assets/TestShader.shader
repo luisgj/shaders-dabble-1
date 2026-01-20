@@ -49,7 +49,7 @@ Shader "Custom/TestShader"
 
             half4 frag(Varyings IN) : SV_Target
             {
-                float2 uv = tiling_and_offset(IN.uv, float2(10.0, 10.0), float2(0.0, 0.0));
+                float2 uv = tiling_and_offset(IN.uv, float2(2, 2), float2(0.0, 0.0));
                 half4 color = tex2D(_BaseMap, uv) * _BaseColor;
                 return color;
             }
